@@ -23,7 +23,7 @@ def sort_variables(v):
 def r_lte_s(v, p_0):
     p = copy.deepcopy(p_0)
     for a_r in v:
-        for a_s in v: 
+        for a_s in v:
             if v.index(a_s) < v.index(a_r):
                 rhs_list = p[a_r]
                 for rhs in rhs_list:
@@ -60,27 +60,53 @@ def left_recursion_elimination(v, p_0):
             p[a_r].append(rhs_copy)
     return p
 
-def begin_with_terminal(p):
-    pass
+def begin_with_terminal(v, p):
+    for r in v:
+        for s in v:
+            toremove = []
+            if v.index(s) != v.index(r):
+                for aux_var in p[r]:
+                    if aux_var[0] == s:
+                        for b in p[s]:
+                            b_cp = b.copy()
+                            b_cp += aux_var[1:]
+                            p[r].append(b_cp)
+                        toremove.append(aux_var)
+                [p[r].remove(index) for index in toremove]
 
-def terminal_followed_by_word_of_variables(p):
-    pass
+    return p
+
+def terminal_followed_by_word_of_variables(v, p):
+    new_terminals = {}
+    for key in p.keys():
+        for each in p[key]:
+            for i in range(len(each)):
+                if i and each[i] not in v:
+                    new_var = each[i].upper() + "_new"
+                    new_terminals[new_var] = [each[i]]
+                    each[i] = new_var
+
+    for key in new_terminals.keys():
+        p[key] = [new_terminals[key]]
+        v.append(key)
+
+    return p
 
 def print_prod(p):
     for key in p.keys():
         print(colored(key, 'magenta') + colored(" → ", 'white', attrs=['bold']) + colored(" ".join(p[key][0]), 'cyan'))
         for rhs in p[key][1:]:
             print(colored(" | ", 'white', attrs=['bold']) + colored(" ".join(rhs), 'cyan'))
-    
+
 def mk_example(ex_num, v_0, p_0):
     pp = pprint.PrettyPrinter(indent=4)
     print(colored("Example " + str(ex_num), attrs=['bold']))
     print("Original production set.")
     print_prod(p_0)
-    
+
     for i, v in enumerate(list(itertools.permutations(v_0))):
         print(colored("Example "+ str(ex_num) + "." + str(i), 'green', attrs=['bold']))
-        
+
         # First step: grammar simplification
         print(colored("Second step: sort variables", 'blue'))
         v = list(v)
@@ -89,20 +115,20 @@ def mk_example(ex_num, v_0, p_0):
         # Third and fourth steps: production set transformation to
         # A_r → A_s α, where r ≤ s and removal of productions of the form
         # Ar → Arα.
-        
+
         print(colored("Production set transformation to A_r → A_s α, where r ≤ s.", 'blue'))
         p_i = r_lte_s(v, p_0)
         print_prod(p_i)
-        print(colored("Production set elimination of A_r → A_r α.", 'blue'))    
+        print(colored("Production set elimination of A_r → A_r α.", 'blue'))
         p_i = left_recursion_elimination(v, p_i)
         print_prod(p_i)
         print(colored("Each production begining with a terminal.", 'grey'))
-        p_i = begin_with_terminal(p_i)
-        pp.pprint("TO DO!")    
+        p_i = begin_with_terminal(v, p_i)
+        print_prod(p_i)
         print(colored("Each production begining with a terminal followed by a word of variables.", 'grey'))
-        p_i = terminal_followed_by_word_of_variables(p_i)
-        pp.pprint("TO DO!")
-    
+        p_i = terminal_followed_by_word_of_variables(v, p_i)
+        print_prod(p_i)
+
 if __name__ == "__main__":
     print(colored("Examples of transformations from CFG to Greibach normal form", attrs=['bold']))
 
@@ -119,4 +145,3 @@ if __name__ == "__main__":
     p1 = { "A" : [["B", "C"]], "B" : [["C", "A"], ["b"]], "C" : [["A", "B"], ["a"]] }
     s1  = "A"
     mk_example(2, v1, p1)
-    
